@@ -17,7 +17,6 @@ public class MsgWrench extends Message {
 
     public MsgWrench() { }
 
-    @SuppressWarnings("unchecked")
     public MsgWrench(TileEntity tileEntityVendingMachine, boolean infinite, String ownerName)
     {
         TileEntityVendingMachine entity = (TileEntityVendingMachine) tileEntityVendingMachine;
@@ -61,7 +60,7 @@ public class MsgWrench extends Message {
                 return null;
             TileEntityVendingMachine entity = (TileEntityVendingMachine) tileEntity;
             entity.infinite = message.infinite;
-            entity.ownerName = message.ownerName;
+            entity.setOwner(message.ownerName);
             player.worldObj.markBlockForUpdate(message.x, message.y, message.z);
             return null;
         }

@@ -1,25 +1,23 @@
 package info.jbcs.minecraft.vending.tileentity;
 
+import java.util.stream.IntStream;
+
 import info.jbcs.minecraft.vending.inventory.InventoryStatic;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
-import net.minecraft.tileentity.TileEntity;
 
-public class TileEntityVendingMachine extends TileEntity implements IInventory, ISidedInventory {
-	public String ownerName = "";
-	public ItemStack[] sold = {null,null,null,null};
-	public ItemStack[] bought = {null,null,null,null};
+public class TileEntityVendingMachine extends TileEntityLockable {
+	public ItemStack[] sold = {null, null, null, null};
+	public ItemStack[] bought = {null, null, null, null};
 	public boolean advanced = false;
 	public boolean infinite = false;
 	public boolean multiple = false;
 
-	private static final int[] side0 = new int[] { };
+	private static final int[] inventorySlots = IntStream.rangeClosed(0, 8).toArray();
 
 	public InventoryStatic inventory = new InventoryStatic(14) {
 		@Override
@@ -145,7 +143,6 @@ public class TileEntityVendingMachine extends TileEntity implements IInventory, 
 		super.readFromNBT(nbttagcompound);
 		inventory.clear();
 		inventory.readFromNBT(nbttagcompound);
-		ownerName = nbttagcompound.getString("owner");
 		advanced = nbttagcompound.getBoolean("advanced");
 		infinite = nbttagcompound.getBoolean("infinite");
 		multiple = nbttagcompound.getBoolean("multiple");
@@ -155,7 +152,6 @@ public class TileEntityVendingMachine extends TileEntity implements IInventory, 
 	public void writeToNBT(NBTTagCompound nbttagcompound) {
 		super.writeToNBT(nbttagcompound);
 		inventory.writeToNBT(nbttagcompound);
-		nbttagcompound.setString("owner", ownerName);
 		nbttagcompound.setBoolean("advanced", advanced);
 		nbttagcompound.setBoolean("infinite", infinite);
 		nbttagcompound.setBoolean("multiple", multiple);
@@ -192,26 +188,37 @@ public class TileEntityVendingMachine extends TileEntity implements IInventory, 
 	}
 
 	@Override
-	public boolean isItemValidForSlot(int i, ItemStack itemstack) {
-		if ((!multiple && i == 100) || (advanced && multiple && i == 13)) {
+	public boolean isItemValidForSlot(int slot, ItemStack itemstack) {
+		if ((!multiple && slot == 100) || (advanced && multiple && slot == 13)) {
 			return false;
 		}
 		return true;
 	}
 
 	@Override
-	public boolean canInsertItem(int index, ItemStack stack, int par3) {
-		return this.isItemValidForSlot(index, stack);
+	public boolean canInsertItem(int slot, ItemStack stack, int par3) {
+		if (!isItemValidForSlot(slot, stack)) return false;
+		for (ItemStack item : getSoldItems()) {
+			if (item != null && stack.isItemEqual(item)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
-	public boolean canExtractItem(int index, ItemStack stack, int side) {
+	public boolean canExtractItem(int slot, ItemStack stack, int side) {
+		for (ItemStack item : getBoughtItems()) {
+			if (item != null && stack.isItemEqual(item)) {
+				return true;
+			}
+		}
 		return false;
 	}
 
 	@Override
 	public int[] getAccessibleSlotsFromSide(int side) {
-		return side0;
+		return inventorySlots;
 	}
 }
 

@@ -18,9 +18,10 @@ buildscript {
 apply plugin: 'forge'
 apply plugin: 'curseforge'
 
-version = "1.2.0b"
+version = "1.2.3"
 group= "info.jbcs.minecraft" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "vending"
+compileJava.options.encoding = 'UTF-8'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
@@ -28,6 +29,33 @@ minecraft {
 	version = "1.7.10-10.13.4.1614-1.7.10"
 	runDir = "eclipse"
 }
+
+// A little hack to fix codechicken's crazy maven structure (at least in 1.7.10)
+eclipse.classpath.file.whenMerged { cp ->
+	// Find all codechicken source jars
+	def srcent = cp.entries.findAll { entry -> entry.path.contains("codechicken") && entry.path.endsWith("-src.jar") }
+	
+	// Remove them from classpath
+	cp.entries.removeAll srcent
+
+	// Map the source entries to their dev counterparts based on basename
+	Map<String, File> srcmap = new HashMap<String, File>()
+	srcent.forEach { entry ->
+		def file = new File(entry.path)
+		srcmap.put(file.getName().replace("-src.jar", "-dev.jar"), file)
+	}
+	
+	// Create file reference factory
+	def fileref = new FileReferenceFactory()
+	
+	// Find all codechicken development jars
+	cp.entries.findAll { entry -> entry.path.contains("codechicken") && entry.path.endsWith("-dev.jar") }.forEach { entry ->
+		File srcmapping = new File(entry.path) // Initialize the srcmapping from the dev jar path
+		srcmapping = srcmap.get(srcmapping.getName()) // Transform it using the sourcemap
+		entry.sourcePath = fileref.fromFile(srcmapping) // Set the source path
+	}
+}
+
 dependencies {
     // you may put jars on which you depend on in ./libs
     // or you may define them like so..

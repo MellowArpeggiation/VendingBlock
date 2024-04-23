@@ -67,7 +67,7 @@ public class HintGui extends Gui {
             }
 
             TileEntityVendingMachine tileEntity = (TileEntityVendingMachine) te;
-            draw(tileEntity.ownerName, tileEntity.getSoldItems(), tileEntity.getBoughtItems());
+            draw(tileEntity.getOwner(), tileEntity.getSoldItems(), tileEntity.getBoughtItems());
 
             GeneralClient.bind("textures/gui/icons.png");
         }

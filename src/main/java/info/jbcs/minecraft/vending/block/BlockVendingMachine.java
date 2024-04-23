@@ -30,7 +30,7 @@ public class BlockVendingMachine extends BlockContainer {
 
 	IIcon IIconTop, IIconSide;
 
-	public BlockVendingMachine(Block[] supports,boolean advanced, boolean multiple) {
+	public BlockVendingMachine(Block[] supports, boolean advanced, boolean multiple) {
 		super(Material.glass);
 		setBlockName("vendingMachine");
 
@@ -68,24 +68,24 @@ public class BlockVendingMachine extends BlockContainer {
 			if (soldItems == null)
 				fits = false;
 		} else {
-			if(! tileEntity.doesStackFit(bought))
+			if (!tileEntity.doesStackFit(bought))
 				fits = false;
 			else if (offered == null)
 				fits = false;
+			else if (offered.stackSize < bought.stackSize)
+				fits = false;
 			else if (bought.getItem() != offered.getItem())
 				fits = false;
-            else if(bought.hasTagCompound() || offered.hasTagCompound()){
-                if(bought.hasTagCompound() && offered.hasTagCompound()) {
+            else if (bought.hasTagCompound() || offered.hasTagCompound()){
+                if (bought.hasTagCompound() && offered.hasTagCompound()) {
                     if (!bought.getTagCompound().equals(offered.getTagCompound())) {
                         fits = false;
                     }
-                }else {
+                } else {
                     fits = false;
                 }
             }
 			else if (bought.getItemDamage() != offered.getItemDamage())
-				fits = false;
-			else if (offered.stackSize < bought.stackSize)
 				fits = false;
 		}
 
@@ -137,7 +137,7 @@ public class BlockVendingMachine extends BlockContainer {
 		if (tileEntity == null)
 			return;
 
-		if (! entityplayer.getDisplayName().equals(tileEntity.ownerName) || ! tileEntity.inventory.isEmpty()){
+		if (!tileEntity.canUnlock(entityplayer) || ! tileEntity.inventory.isEmpty()){
 			vend(world, i, j, k, entityplayer);
 			return;
 		}
@@ -158,13 +158,7 @@ public class BlockVendingMachine extends BlockContainer {
 			return true;
 		}
 
-		if (entityplayer.getDisplayName().equals(tileEntity.ownerName) && !entityplayer.isSneaking()) {
-			Vending.guiVending.open(entityplayer, world, i, j, k);
-
-			return true;
-		}
-
-		if (entityplayer.capabilities.isCreativeMode && !entityplayer.isSneaking()) {
+		if (tileEntity.canUnlock(entityplayer) && !entityplayer.isSneaking()) {
 			Vending.guiVending.open(entityplayer, world, i, j, k);
 
 			return true;
@@ -177,14 +171,13 @@ public class BlockVendingMachine extends BlockContainer {
 
 	@Override
 	public void onBlockPlacedBy(World world, int i, int j, int k, EntityLivingBase entityliving, ItemStack stack) {
-		TileEntityVendingMachine e = new TileEntityVendingMachine();
-		e.advanced=isAdvanced;
-		e.multiple=isMultiple;
+		TileEntityVendingMachine te = new TileEntityVendingMachine();
+		te.advanced = isAdvanced;
+		te.multiple = isMultiple;
 
-		if (entityliving != null) {
-			EntityPlayer player = (EntityPlayer) entityliving;
-			e.ownerName = player.getDisplayName();
-			world.setTileEntity(i, j, k, e);
+		if (entityliving != null && entityliving instanceof EntityPlayer) {
+			te.setOwner((EntityPlayer) entityliving);
+			world.setTileEntity(i, j, k, te);
 		}
 	}
 
@@ -213,7 +206,6 @@ public class BlockVendingMachine extends BlockContainer {
 
 		if (tileentitychest == null)
 			return;
-
 
 
 		for (int l = 0; l < tileentitychest.getSizeInventory(); l++) {
